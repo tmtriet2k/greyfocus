@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GreyFocus</string>
+    <string name="service_label">GreyFocus greyscale</string>
+    <string name="service_description">Watches which app or website is in the foreground and switches the screen to greyscale for the apps and sites you pick. It only reads the browser address bar to know which site is open; nothing leaves your device.</string>
+
+    <string name="master_switch">GreyFocus active</string>
+
+    <string name="setup_title">Setup</string>
+    <string name="accessibility_on">Accessibility service: ON</string>
+    <string name="accessibility_off">Accessibility service: OFF</string>
+    <string name="open_settings">Open settings</string>
+    <string name="permission_on">Greyscale permission: granted</string>
+    <string name="permission_off">Greyscale permission: missing</string>
+    <string name="copy_adb">Copy adb command</string>
+    <string name="copied">Copied to clipboard</string>
+    <string name="setup_help">Run the command above once from a computer with USB debugging enabled. It lets GreyFocus flip the system colour-correction setting; Android does not allow apps to request this permission from the phone itself.</string>
+
+    <string name="status_title">Live status</string>
+    <string name="status_service_stopped">Service not running</string>
+    <string name="status_app">App: %1$s</string>
+    <string name="status_url">Site: %1$s</string>
+    <string name="status_grey_on">Screen: GREYSCALE</string>
+    <string name="status_grey_off">Screen: colour</string>
+    <string name="test_grey">Test greyscale for 3 s</string>
+    <string name="test_grey_missing_permission">Grant the adb permission first</string>
+
+    <string name="apps_title">Greyscale apps</string>
+    <string name="apps_empty">No apps selected yet</string>
+    <string name="choose_apps">Choose apps</string>
+    <string name="search_apps">Search apps</string>
+
+    <string name="sites_title">Greyscale websites</string>
+    <string name="sites_help">Matched against the domain in the browser address bar. \"youtube.com\" also matches m.youtube.com. Works with Chrome, Brave, Edge, Firefox, Samsung Internet, Opera, Vivaldi, Kiwi and DuckDuckGo.</string>
+    <string name="site_hint">e.g. youtube.com</string>
+    <string name="add">Add</string>
+    <string name="remove">Remove</string>
+    <string name="sites_empty">No websites added yet</string>
+    <string name="site_invalid">Enter a domain like reddit.com</string>
+    <string name="none">none</string>
+</resources>
