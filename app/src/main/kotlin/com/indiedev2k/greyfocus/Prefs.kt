@@ -1,23 +1,33 @@
 package com.indiedev2k.greyfocus
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 
 /** Persistent user settings plus the saved system colour state we restore on exit. */
 class Prefs(context: Context) {
 
-    private val sp: SharedPreferences =
-        context.applicationContext.getSharedPreferences("greyfocus", Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+
+    @Suppress("DEPRECATION")
+    private val sp: SharedPreferences
+        get() = appContext.getSharedPreferences("greyfocus", Context.MODE_MULTI_PROCESS)
 
     /** Master switch. */
     var enabled: Boolean
         get() = sp.getBoolean(KEY_ENABLED, true)
-        set(value) = sp.edit().putBoolean(KEY_ENABLED, value).apply()
+        set(value) {
+            sp.edit().putBoolean(KEY_ENABLED, value).commit()
+            notifyChanged()
+        }
 
     /** Package names that should always be shown in greyscale. */
     var blockedPackages: Set<String>
         get() = sp.getStringSet(KEY_PACKAGES, emptySet())?.toSet() ?: emptySet()
-        set(value) = sp.edit().putStringSet(KEY_PACKAGES, value.toSet()).apply()
+        set(value) {
+            sp.edit().putStringSet(KEY_PACKAGES, value.toSet()).commit()
+            notifyChanged()
+        }
 
     /** Normalised domains (no scheme, no www., no path). */
     var sites: List<String>
@@ -25,7 +35,10 @@ class Prefs(context: Context) {
             .split('\n')
             .map { it.trim() }
             .filter { it.isNotEmpty() }
-        set(value) = sp.edit().putString(KEY_SITES, value.joinToString("\n")).apply()
+        set(value) {
+            sp.edit().putString(KEY_SITES, value.joinToString("\n")).commit()
+            notifyChanged()
+        }
 
     fun addSite(raw: String): Boolean {
         val site = normalizeSite(raw)
@@ -36,6 +49,10 @@ class Prefs(context: Context) {
 
     fun removeSite(site: String) {
         sites = sites - site
+    }
+
+    private fun notifyChanged() {
+        appContext.sendBroadcast(Intent(ACTION_CHANGED).setPackage(appContext.packageName))
     }
 
     /** True when the text shown in a browser address bar belongs to one of [sites]. */
@@ -65,6 +82,7 @@ class Prefs(context: Context) {
         private const val KEY_WE_SET_GREY = "we_set_grey"
         private const val KEY_PREV_ENABLED = "prev_daltonizer_enabled"
         private const val KEY_PREV_MODE = "prev_daltonizer_mode"
+        internal const val ACTION_CHANGED = "com.indiedev2k.greyfocus.PREFS_CHANGED"
 
         fun normalizeSite(raw: String): String = hostOf(raw) ?: ""
 
