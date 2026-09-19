@@ -18,12 +18,17 @@
 
     <string name="status_title">Live status</string>
     <string name="status_service_stopped">Service not running</string>
+    <string name="status_service_running_background">Service running in background</string>
     <string name="status_app">App: %1$s</string>
     <string name="status_url">Site: %1$s</string>
     <string name="status_grey_on">Screen: GREYSCALE</string>
     <string name="status_grey_off">Screen: colour</string>
     <string name="test_grey">Test greyscale for 3 s</string>
     <string name="test_grey_missing_permission">Grant the adb permission first</string>
+    <string name="keep_alive_channel">GreyFocus monitoring</string>
+    <string name="keep_alive_channel_description">Keeps selected apps and websites greyscale while GreyFocus is closed.</string>
+    <string name="keep_alive_title">GreyFocus is active</string>
+    <string name="keep_alive_text">Monitoring selected apps and websites</string>
 
     <string name="apps_title">Greyscale apps</string>
     <string name="apps_empty">No apps selected yet</string>

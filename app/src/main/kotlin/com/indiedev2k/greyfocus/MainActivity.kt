@@ -106,6 +106,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         renderSetup()
+        if (shouldRunWatchdog()) {
+            KeepAliveService.start(this)
+        } else {
+            KeepAliveService.stop(this)
+        }
         renderApps()
         renderSites()
         handler.post(statusTick)
@@ -140,7 +145,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderLiveStatus() {
         if (!LiveStatus.serviceRunning) {
-            tvStatusApp.setText(R.string.status_service_stopped)
+            tvStatusApp.setText(
+                if (isAccessibilityServiceEnabled()) {
+                    R.string.status_service_running_background
+                } else {
+                    R.string.status_service_stopped
+                }
+            )
             tvStatusUrl.text = ""
         } else {
             val pkg = LiveStatus.currentPackage
@@ -181,13 +192,28 @@ class MainActivity : AppCompatActivity() {
 
     private fun isAccessibilityServiceEnabled(): Boolean {
         val component = ComponentName(this, FocusAccessibilityService::class.java)
+        val globalAccessibilityEnabled = Settings.Secure.getInt(
+            contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0
+        )
         val enabled = Settings.Secure.getString(
             contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
-        return enabled.split(':').any {
-            it.equals(component.flattenToString(), ignoreCase = true) ||
-                it.equals(component.flattenToShortString(), ignoreCase = true)
-        }
+        )
+        return AccessibilityServiceState.isEnabled(
+            globalAccessibilityEnabled,
+            enabled,
+            setOf(component.flattenToString(), component.flattenToShortString()),
+        )
+    }
+
+    private fun shouldRunWatchdog(): Boolean {
+        val component = ComponentName(this, FocusAccessibilityService::class.java)
+        val enabled = Settings.Secure.getString(
+            contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        )
+        return AccessibilityServiceState.shouldRunWatchdog(
+            enabled,
+            setOf(component.flattenToString(), component.flattenToShortString()),
+        )
     }
 
     companion object {

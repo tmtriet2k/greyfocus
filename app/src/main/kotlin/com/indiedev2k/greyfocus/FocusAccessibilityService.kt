@@ -10,6 +10,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
+import androidx.core.content.ContextCompat
 
 /**
  * Tracks the foreground app (and, for browsers, the site in the address bar) and switches the
@@ -37,6 +38,10 @@ class FocusAccessibilityService : AccessibilityService() {
                     LiveStatus.update(null, null, false)
                 }
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> scheduleEvaluate(500)
+                Prefs.ACTION_CHANGED -> {
+                    prefs = Prefs(this@FocusAccessibilityService)
+                    scheduleEvaluate(0)
+                }
             }
         }
     }
@@ -45,19 +50,27 @@ class FocusAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         prefs = Prefs(this)
         imePackages = loadImePackages()
-        registerReceiver(screenReceiver, IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_USER_PRESENT)
-        })
+        ContextCompat.registerReceiver(
+            this,
+            screenReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_USER_PRESENT)
+                addAction(Prefs.ACTION_CHANGED)
+            },
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
         LiveStatus.serviceRunning = true
         lastApplied = null
+        KeepAliveService.start(this)
         scheduleEvaluate(300)
         Log.i(TAG, "connected")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) Log.d(TAG, "DBG state pkg=$pkg cls=${event.className}")
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 // Keyboards, the notification shade and permission dialogs float above the real
@@ -83,6 +96,7 @@ class FocusAccessibilityService : AccessibilityService() {
 
     private fun evaluate() {
         val pkg = currentPackage
+            ?: rootInActiveWindow?.packageName?.toString()?.also { currentPackage = it }
         if (!prefs.enabled || pkg == null) {
             setGrey(false)
             LiveStatus.update(pkg, null, false)
@@ -107,13 +121,16 @@ class FocusAccessibilityService : AccessibilityService() {
             else -> false
         }
 
+        Log.d(TAG, "DBG evaluate pkg=$pkg enabled=${prefs.enabled} blocked=${prefs.blockedPackages} sites=${prefs.sites} shouldBeGrey=$shouldBeGrey")
         if (shouldBeGrey != null) setGrey(shouldBeGrey)
         LiveStatus.update(pkg, site, lastApplied ?: false)
     }
 
     private fun setGrey(grey: Boolean) {
         if (lastApplied == grey) return
-        if (GreyscaleController.apply(this, grey)) lastApplied = grey
+        val ok = GreyscaleController.apply(this, grey)
+        Log.d(TAG, "DBG setGrey $grey ok=$ok")
+        if (ok) lastApplied = grey
     }
 
     private fun loadImePackages(): Set<String> {
@@ -138,6 +155,7 @@ class FocusAccessibilityService : AccessibilityService() {
         handler.removeCallbacksAndMessages(null)
         runCatching { unregisterReceiver(screenReceiver) }
         if (::prefs.isInitialized) GreyscaleController.apply(this, false)
+        KeepAliveService.stop(this)
         LiveStatus.serviceRunning = false
         LiveStatus.update(null, null, false)
         lastApplied = null
